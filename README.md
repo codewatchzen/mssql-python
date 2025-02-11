@@ -55,7 +55,7 @@ The driver offers a suite of Pythonic enhancements that streamline database inte
 Below is a simple example demonstrating how to establish a connection and execute a query using mssql-python:
 
 ```python
-import mssql_python
+from mssql_python import connect
 
 # Establish a connection
 connection = mssql_python.connect(
@@ -72,6 +72,9 @@ rows = cursor.fetchall()
 
 for row in rows:
     print(row)
+
+# Close the cursor
+cursor.close()
 
 # Close the connection
 connection.close()
