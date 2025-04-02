@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "../../"  # directory where `requirements.txt` is located
+    schedule:
+      interval: "weekly"  # Check for updates weekly
+    open-pull-requests-limit: 5  # Limiting to 5 open PR for testing purpose
+    reviewers:
+      - "enumittal"  # Auto-assign PRs to a reviewer for now
+    labels:
+      - "dependencies"
+      - "security"
+    ignore:
+      - dependency-name: "example-package"
+        versions: [">=2.0.0"]  # Ignore specific package updates
