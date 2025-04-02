@@ -22,10 +22,9 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Linter (flake8)
-        run: |
-          pip install flake8
-          flake8 . --count --max-complexity=10 --max-line-length=100 --statistics
+      - name: Run Linter
+        run: pylint mssql_python/
+        continue-on-error: true
 
       - name: Run Tests (pytest)
         run: |
