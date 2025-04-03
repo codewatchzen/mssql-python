@@ -35,7 +35,7 @@ jobs:
       - name: Create Database and User
         run: |
           sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE DATABASE TestDB"
-          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE LOGIN testuser WITH PASSWORD = '$(DB_PASSWORD)'"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE LOGIN testuser WITH PASSWORD = '${{ secrets.DB_PASSWORD }}'"
           sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "CREATE USER testuser FOR LOGIN testuser"
           sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "ALTER ROLE db_owner ADD MEMBER testuser"
         shell: pwsh
@@ -60,7 +60,7 @@ jobs:
           mkdir test-results
           pytest --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
         env:
-          DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=$(DB_PASSWORD);TrustServerCertificate=yes'        
+          DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=${{ secrets.DB_PASSWORD }};TrustServerCertificate=yes'        
 
       - name: Run Linter
         run:  |
