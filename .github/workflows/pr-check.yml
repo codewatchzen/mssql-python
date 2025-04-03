@@ -6,7 +6,7 @@ on:
 jobs:
   pr-validation:
     name: Run PR Checks
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Repository
@@ -22,14 +22,49 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      # Start LocalDB instance
+      - powershell: |
+          sqllocaldb create MSSQLLocalDB
+          sqllocaldb start MSSQLLocalDB
+        displayName: 'Start LocalDB instance'
+
+      # Create database and user
+      - powershell: |
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE DATABASE TestDB"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE LOGIN testuser WITH PASSWORD = '$(DB_PASSWORD)'"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "CREATE USER testuser FOR LOGIN testuser"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "ALTER ROLE db_owner ADD MEMBER testuser"
+        displayName: 'Setup database and user'
+        env:
+          DB_PASSWORD: $(DB_PASSWORD)
+
+      - script: |
+          cd mssql_python\pybind
+          mkdir build
+          cd build  
+          cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
+          cmake --build . --config Debug
+          copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
+        displayName: 'Build .pyd file'
+
+        run: |
+          pip install pytest
+          python -m pytest -v --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
+        displayName: 'Run tests with coverage'
+        env:
+          DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=$(DB_PASSWORD);TrustServerCertificate=yes'        
+        continue-on-error: true
+
       - name: Run Linter
-        run: pylint mssql_python/
+        run:  |
+          pip install pylint 
+          pylint pylint mssql_python/
         continue-on-error: true
 
       - name: Run Tests (pytest)
         run: |
           pip install pytest
-          pytest --maxfail=5 --disable-warnings --tb=short
+          python -m pytest -v --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
         continue-on-error: true
 
       - name: Run Security Scan (Bandit)
