@@ -49,6 +49,8 @@ jobs:
           cd build  
           cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build . --config Debug
+          echo Current working directory (CMD): %CD%
+          dir /A
           echo "current working directory after pyd: $(pwd)"
           echo "displaying directory contents:" 
           ls
@@ -59,7 +61,7 @@ jobs:
         run: |
           pip install pytest pytest-cov pytest-html
           pip install pytest-mock pytest-asyncio pytest-timeout pytest-xdist pytest-cov
-          echo "current working directory: $(pwd)"
+          echo "current working directory:" %CD%
           echo "displaying directory contents:" 
           ls
           cd tests
