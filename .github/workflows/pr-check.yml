@@ -55,7 +55,7 @@ jobs:
           echo "displaying directory contents:" 
           ls
           copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
-          cd mssql_python
+          cd ..\..
           echo "****displaying mssql_python directory contents: *****"
         shell: cmd
 
