@@ -40,7 +40,7 @@ jobs:
           sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "ALTER ROLE db_owner ADD MEMBER testuser"
         shell: pwsh
         env:
-          DB_PASSWORD: $(DB_PASSWORD)
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       - name: Build .pyd file
         run: |
