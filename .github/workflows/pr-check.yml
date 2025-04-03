@@ -49,14 +49,14 @@ jobs:
           cd build  
           cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build . --config Debug
-          copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
+          copy Debug\ddbc_bindings.pyd ..\ddbc_bindings.pyd
         shell: cmd
 
       - name: Run Tests
         run: |
           pip install pytest pytest-cov pytest-html
           pip install pytest-mock pytest-asyncio pytest-timeout pytest-xdist pytest-cov
-          cd tests
+          cd  ..\tests
           mkdir test-results
           pytest --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
         env:
