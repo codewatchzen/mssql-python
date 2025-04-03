@@ -7,6 +7,8 @@ jobs:
   pr-validation:
     name: Run PR Checks
     runs-on: windows-latest
+    env:
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - name: Checkout Repository
@@ -22,36 +24,40 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Tests (pytest)
-      # Start LocalDB instance
-      - powershell: |
+      - name: Start LocalDB Instance
+        run: |
           sqllocaldb create MSSQLLocalDB
           sqllocaldb start MSSQLLocalDB
-        displayName: 'Start LocalDB instance'
+        shell: pwsh
 
       # Create database and user
-      - powershell: |
+      - name: Create Database and User
+        run: |
           sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE DATABASE TestDB"
           sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE LOGIN testuser WITH PASSWORD = '$(DB_PASSWORD)'"
           sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "CREATE USER testuser FOR LOGIN testuser"
           sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "ALTER ROLE db_owner ADD MEMBER testuser"
-        displayName: 'Setup database and user'
+        shell: pwsh
         env:
           DB_PASSWORD: $(DB_PASSWORD)
 
-      - script: |
+      - name: Build .pyd file
+        run: |
           cd mssql_python\pybind
           mkdir build
           cd build  
           cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build . --config Debug
           copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
-        displayName: 'Build .pyd file'
+        shell: cmd
 
+      - name: Run Tests
         run: |
-          pip install pytest
-          python -m pytest -v --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
-        displayName: 'Run tests with coverage'
+          pip install pytest pytest-cov pytest-html
+          pip install pytest-mock pytest-asyncio pytest-timeout pytest-xdist pytest-cov
+          cd mssql_python\tests
+          mkdir test-results
+          pytest --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
         env:
           DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=$(DB_PASSWORD);TrustServerCertificate=yes'        
 
