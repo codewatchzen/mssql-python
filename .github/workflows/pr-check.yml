@@ -42,7 +42,7 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
-      - name: Build .pyd file
+      - name: Build .pyd file and run pytest
         run: |
           cd mssql_python\pybind
           mkdir build
@@ -58,6 +58,9 @@ jobs:
           cd ..\..
           echo "****displaying mssql_python directory contents: *****"
           ls
+          echo "***** run test*****"
+          cd ..
+          pytest
         shell: cmd
 
       - name: Run Tests
@@ -76,7 +79,7 @@ jobs:
       - name: Run Linter
         run:  |
           pip install pylint 
-          pylint pylint mssql_python/
+          pylint mssql_python/
 
       - name: Run Security Scan (Bandit)
         run: |
