@@ -22,6 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Run Tests (pytest)
       # Start LocalDB instance
       - powershell: |
           sqllocaldb create MSSQLLocalDB
@@ -53,19 +54,11 @@ jobs:
         displayName: 'Run tests with coverage'
         env:
           DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=$(DB_PASSWORD);TrustServerCertificate=yes'        
-        continue-on-error: true
 
       - name: Run Linter
         run:  |
           pip install pylint 
           pylint pylint mssql_python/
-        continue-on-error: true
-
-      - name: Run Tests (pytest)
-        run: |
-          pip install pytest
-          python -m pytest -v --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
-        continue-on-error: true
 
       - name: Run Security Scan (Bandit)
         run: |
