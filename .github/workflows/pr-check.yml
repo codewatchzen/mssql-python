@@ -22,7 +22,8 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov pybind11 coverage pytest-azurepipelines unittest-xml-reporting setuptools
+        # to replace previous line with pip install -r requirements.txt
 
       - name: Start LocalDB Instance
         run: |
