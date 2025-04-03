@@ -57,6 +57,7 @@ jobs:
           copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
           cd ..\..
           echo "****displaying mssql_python directory contents: *****"
+          ls
         shell: cmd
 
       - name: Run Tests
