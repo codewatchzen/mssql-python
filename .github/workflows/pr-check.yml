@@ -49,7 +49,8 @@ jobs:
           cd build  
           cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build . --config Debug
-          copy Debug\ddbc_bindings.pyd ..\ddbc_bindings.pyd
+          echo "current working directory after pyd: $(pwd)"
+          copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
         shell: cmd
 
       - name: Run Tests
