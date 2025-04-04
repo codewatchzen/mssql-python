@@ -1,0 +1,88 @@
+name: PR Checks
+
+on:
+  pull_request: #runs on all branches
+
+jobs:
+  pr-validation:
+    name: Run PR Checks
+    runs-on: windows-latest
+    env:
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pybind11 coverage pytest-azurepipelines unittest-xml-reporting setuptools
+        # to replace previous line with pip install -r requirements.txt
+
+      - name: Start LocalDB Instance
+        run: |
+          sqllocaldb create MSSQLLocalDB
+          sqllocaldb start MSSQLLocalDB
+        shell: pwsh
+
+      # Create database and user
+      - name: Create Database and User
+        run: |
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE DATABASE TestDB"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "CREATE LOGIN testuser WITH PASSWORD = '${{ secrets.DB_PASSWORD }}'"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "CREATE USER testuser FOR LOGIN testuser"
+          sqlcmd -S "(localdb)\MSSQLLocalDB" -d TestDB -Q "ALTER ROLE db_owner ADD MEMBER testuser"
+        shell: pwsh
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+      - name: Build .pyd file and run pytest
+        run: |
+          cd mssql_python\pybind
+          mkdir build
+          cd build  
+          cmake -DPython3_EXECUTABLE="python3" -DCMAKE_BUILD_TYPE=Debug ..
+          cmake --build . --config Debug
+          echo Current working directory (CMD): %CD%
+          dir /A
+          echo "current working directory after pyd: $(pwd)"
+          echo "displaying directory contents:" 
+          ls
+          copy Debug\ddbc_bindings.pyd ..\..\ddbc_bindings.pyd
+          cd ..\..
+          echo "****displaying mssql_python directory contents: *****"
+          ls
+          echo "***** run test*****"
+          cd ..
+          pytest
+        shell: cmd
+
+      - name: Run Tests
+        run: |
+          echo "current working directory:" %CD%
+          echo "displaying directory contents:" 
+          ls
+          pytest
+        #cd tests
+        # mkdir test-results
+        #  pytest --junitxml=test-results.xml --cov=. --cov-report=xml --capture=tee-sys --cache-clear
+        env:
+          DB_CONNECTION_STRING: 'Server=(localdb)\MSSQLLocalDB;Database=TestDB;Uid=testuser;Pwd=${{ secrets.DB_PASSWORD }};TrustServerCertificate=yes'        
+        continue-on-error: true # Continue even if tests fail
+
+      - name: Run Linter
+        run:  |
+          pip install pylint 
+          pylint mssql_python/
+
+      - name: Run Security Scan (Bandit)
+        run: |
+          pip install bandit
+          bandit -r . --exclude tests/
+        
